@@ -1,5 +1,6 @@
 package com.chatapp.data.repository
 
+import com.chatapp.data.local.AuthSessionStorage
 import com.chatapp.core.model.User
 import com.chatapp.domain.repository.AuthRepository
 import kotlinx.coroutines.delay
@@ -7,7 +8,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class FakeAuthRepository @Inject constructor() : AuthRepository {
+class FakeAuthRepository @Inject constructor(
+    private val sessionStore: AuthSessionStorage,
+) : AuthRepository {
 
     private var currentUser: User? = null
 
@@ -20,6 +23,7 @@ class FakeAuthRepository @Inject constructor() : AuthRepository {
             signature = "",
         )
         currentUser = user
+        sessionStore.saveSession(user, email)
         return user
     }
 
@@ -32,12 +36,20 @@ class FakeAuthRepository @Inject constructor() : AuthRepository {
             signature = "",
         )
         currentUser = user
+        sessionStore.saveSession(user, email)
         return user
     }
 
     override suspend fun logout() {
         currentUser = null
+        sessionStore.clearSession()
     }
 
-    override fun isLoggedIn(): Boolean = currentUser != null
+    override suspend fun isLoggedIn(): Boolean = currentUser != null
+
+    override suspend fun checkSavedSession(): User? {
+        val user = sessionStore.getSavedUser()
+        if (user != null) currentUser = user
+        return user
+    }
 }

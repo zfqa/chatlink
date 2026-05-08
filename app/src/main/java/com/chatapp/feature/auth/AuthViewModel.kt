@@ -14,6 +14,7 @@ data class AuthUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val isLoggedIn: Boolean = false,
+    val isCheckingSession: Boolean = true,
 )
 
 @HiltViewModel
@@ -23,6 +24,17 @@ class AuthViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val saved = authRepo.checkSavedSession()
+            if (saved != null) {
+                _uiState.value = AuthUiState(isLoggedIn = true, isCheckingSession = false)
+            } else {
+                _uiState.value = AuthUiState(isCheckingSession = false)
+            }
+        }
+    }
 
     fun login(email: String, password: String) {
         if (email.isBlank() || password.isBlank()) {
