@@ -8,4 +8,7 @@ import javax.inject.Inject
 
 class FakeContactRepository @Inject constructor() : ContactRepository {
     override fun getContacts(): Flow<List<Contact>> = flowOf(FakeData.contacts)
+
+    override fun getContact(userId: String): Contact? =
+        FakeData.contacts.find { it.user.id == userId }
 }

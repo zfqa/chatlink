@@ -1,5 +1,6 @@
 package com.chatapp.feature.contacts
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,6 +21,7 @@ import com.chatapp.core.ui.components.LoadingView
 
 @Composable
 fun ContactsScreen(
+    onContactClick: (String) -> Unit,
     viewModel: ContactsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -27,12 +29,12 @@ fun ContactsScreen(
         is UiState.Loading -> LoadingView()
         is UiState.Empty -> EmptyState(message = "暂无联系人")
         is UiState.Error -> ErrorView(message = state.message)
-        is UiState.Content -> ContactsContent(state.data)
+        is UiState.Content -> ContactsContent(state.data, onContactClick)
     }
 }
 
 @Composable
-private fun ContactsContent(data: ContactsUiData) {
+private fun ContactsContent(data: ContactsUiData, onContactClick: (String) -> Unit) {
     val contacts = data.filtered
     if (contacts.isEmpty()) {
         EmptyState(message = "没有匹配的联系人")
@@ -45,7 +47,7 @@ private fun ContactsContent(data: ContactsUiData) {
                 Text(text = initial, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
             }
             items(group, key = { it.user.id }) { contact ->
-                ContactItem(contact)
+                ContactItem(contact, onClick = { onContactClick(contact.user.id) })
                 HorizontalDivider(modifier = Modifier.padding(start = 72.dp))
             }
         }
@@ -53,9 +55,9 @@ private fun ContactsContent(data: ContactsUiData) {
 }
 
 @Composable
-private fun ContactItem(contact: Contact) {
+private fun ContactItem(contact: Contact, onClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Avatar(name = contact.user.nickname)

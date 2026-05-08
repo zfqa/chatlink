@@ -9,6 +9,8 @@ object Routes {
     const val DISCOVER = "discover"
     const val PROFILE = "profile"
     const val CHAT_DETAIL = "chat_detail/{conversationId}"
+    const val CONTACT_DETAIL = "contact_detail/{userId}"
 
     fun chatDetail(conversationId: String) = "chat_detail/$conversationId"
+    fun contactDetail(userId: String) = "contact_detail/$userId"
 }

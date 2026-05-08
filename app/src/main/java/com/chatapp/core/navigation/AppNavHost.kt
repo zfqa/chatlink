@@ -7,6 +7,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.chatapp.feature.contactdetail.ContactDetailScreen
 import com.chatapp.feature.auth.LoginScreen
 import com.chatapp.feature.auth.RegisterScreen
 import com.chatapp.feature.main.MainScreen
@@ -49,10 +50,26 @@ fun AppNavHost(
                 onConversationClick = { conversationId ->
                     navController.navigate(Routes.chatDetail(conversationId))
                 },
+                onContactClick = { userId ->
+                    navController.navigate(Routes.contactDetail(userId))
+                },
                 onLogout = {
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
+                },
+            )
+        }
+
+        composable(
+            route = Routes.CONTACT_DETAIL,
+            arguments = listOf(navArgument("userId") { type = NavType.StringType }),
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
+            ContactDetailScreen(
+                onBack = { navController.popBackStack() },
+                onSendMessage = { conversationId ->
+                    navController.navigate(Routes.chatDetail(conversationId))
                 },
             )
         }

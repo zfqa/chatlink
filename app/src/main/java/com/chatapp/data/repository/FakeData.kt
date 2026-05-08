@@ -27,13 +27,30 @@ object FakeData {
 
     private val now = System.currentTimeMillis()
 
-    val conversations = listOf(
+    private val _conversations = mutableListOf(
         Conversation(id = "conv_1", peer = alice, lastMessage = "明天见！", lastMessageTime = now - 120_000, unreadCount = 2),
         Conversation(id = "conv_2", peer = bob, lastMessage = "好的，收到", lastMessageTime = now - 600_000, unreadCount = 0),
         Conversation(id = "conv_3", peer = carol, lastMessage = "[图片]", lastMessageTime = now - 3_600_000, unreadCount = 1),
         Conversation(id = "conv_4", peer = dave, lastMessage = "周末一起打球吗？", lastMessageTime = now - 86_400_000, unreadCount = 0),
         Conversation(id = "conv_5", peer = eve, lastMessage = "那本书推荐给你", lastMessageTime = now - 172_800_000, unreadCount = 0, isPinned = true),
     )
+    val conversations: List<Conversation> get() = _conversations
+
+    private var convCounter = 100
+
+    fun getOrCreateConversation(peerId: String): Conversation {
+        _conversations.find { it.peer.id == peerId }?.let { return it }
+        convCounter++
+        val peer = allUsers.find { it.id == peerId } ?: me
+        val conv = Conversation(
+            id = "conv_$convCounter",
+            peer = peer,
+            lastMessage = "",
+            lastMessageTime = System.currentTimeMillis(),
+        )
+        _conversations.add(0, conv)
+        return conv
+    }
 
     val messagesMap = mutableMapOf(
         "conv_1" to mutableListOf(
