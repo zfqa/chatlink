@@ -17,6 +17,7 @@ import com.chatapp.feature.profile.ProfileScreen
 @Composable
 fun MainScreen(
     onConversationClick: (String) -> Unit,
+    onLogout: () -> Unit,
 ) {
     val navController = rememberNavController()
     val items = BottomNavItem.entries
@@ -72,7 +73,7 @@ fun MainScreen(
                 DiscoverScreen()
             }
             composable(BottomNavItem.PROFILE.route) {
-                ProfileScreen()
+            ProfileScreen(onLogout = onLogout)
             }
         }
     }

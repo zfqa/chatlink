@@ -3,6 +3,7 @@ package com.chatapp.feature.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatapp.core.common.UiState
+import com.chatapp.domain.repository.AuthRepository
 import com.chatapp.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,6 +15,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val userRepo: UserRepository,
+    private val authRepo: AuthRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiState<ProfileUiData>>(UiState.Loading)
@@ -35,6 +37,13 @@ class ProfileViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "加载失败")
             }
+        }
+    }
+
+    fun logout(onDone: () -> Unit) {
+        viewModelScope.launch {
+            authRepo.logout()
+            onDone()
         }
     }
 }

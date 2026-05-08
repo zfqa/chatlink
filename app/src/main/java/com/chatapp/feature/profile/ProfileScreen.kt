@@ -22,9 +22,11 @@ import com.chatapp.core.common.UiState
 import com.chatapp.core.ui.components.Avatar
 import com.chatapp.core.ui.components.ErrorView
 import com.chatapp.core.ui.components.LoadingView
+import com.chatapp.core.ui.components.LoadingView
 
 @Composable
 fun ProfileScreen(
+    onLogout: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -32,12 +34,12 @@ fun ProfileScreen(
         is UiState.Loading -> LoadingView()
         is UiState.Empty -> LoadingView()
         is UiState.Error -> ErrorView(message = state.message)
-        is UiState.Content -> ProfileContent(state.data)
+        is UiState.Content -> ProfileContent(state.data, onLogout = { viewModel.logout(onLogout) })
     }
 }
 
 @Composable
-private fun ProfileContent(data: ProfileUiData) {
+private fun ProfileContent(data: ProfileUiData, onLogout: () -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(vertical = 8.dp),
@@ -70,6 +72,15 @@ private fun ProfileContent(data: ProfileUiData) {
         items(data.menuItems) { menuItem ->
             MenuItemRow(menuItem)
             HorizontalDivider(modifier = Modifier.padding(start = 56.dp))
+        }
+        item { Spacer(Modifier.height(24.dp)) }
+        item {
+            OutlinedButton(
+                onClick = onLogout,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            ) {
+                Text("Exit Login")
+            }
         }
     }
 }
