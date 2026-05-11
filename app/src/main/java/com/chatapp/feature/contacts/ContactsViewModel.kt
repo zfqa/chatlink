@@ -3,7 +3,9 @@ package com.chatapp.feature.contacts
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatapp.core.common.UiState
+import com.chatapp.core.model.FriendRequestStatus
 import com.chatapp.domain.repository.ContactRepository
+import com.chatapp.domain.repository.FriendRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -12,10 +14,15 @@ import javax.inject.Inject
 @HiltViewModel
 class ContactsViewModel @Inject constructor(
     private val contactRepo: ContactRepository,
+    private val friendRepo: FriendRepository,
 ) : ViewModel() {
     private val _query = MutableStateFlow("")
     private val _uiState = MutableStateFlow<UiState<ContactsUiData>>(UiState.Loading)
     val uiState: StateFlow<UiState<ContactsUiData>> = _uiState.asStateFlow()
+
+    private val _pendingRequestCount = MutableStateFlow(0)
+    val pendingRequestCount: StateFlow<Int> = _pendingRequestCount.asStateFlow()
+
     init {
         viewModelScope.launch {
             combine(contactRepo.getContacts(), _query) { contacts, q ->
@@ -24,6 +31,11 @@ class ContactsViewModel @Inject constructor(
             }.catch { e ->
                 emit(UiState.Error(e.message ?: "加载失败"))
             }.collect { _uiState.value = it }
+        }
+        viewModelScope.launch {
+            friendRepo.getPendingRequests().collect { list ->
+                _pendingRequestCount.value = list.size
+            }
         }
     }
     fun onQueryChange(q: String) { _query.value = q }

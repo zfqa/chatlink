@@ -18,6 +18,8 @@ import com.chatapp.feature.profile.ProfileScreen
 fun MainScreen(
     onConversationClick: (String) -> Unit,
     onContactClick: (String) -> Unit,
+    onAddFriend: () -> Unit,
+    onFriendRequests: () -> Unit,
     onLogout: () -> Unit,
 ) {
     val navController = rememberNavController()
@@ -68,7 +70,11 @@ fun MainScreen(
                 ChatsScreen(onConversationClick = onConversationClick)
             }
             composable(BottomNavItem.CONTACTS.route) {
-                ContactsScreen(onContactClick = onContactClick)
+                ContactsScreen(
+                    onContactClick = onContactClick,
+                    onAddFriend = onAddFriend,
+                    onFriendRequests = onFriendRequests,
+                )
             }
             composable(BottomNavItem.DISCOVER.route) {
                 DiscoverScreen()

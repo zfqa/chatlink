@@ -7,6 +7,8 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.chatapp.feature.friendrequest.FriendRequestsScreen
+import com.chatapp.feature.searchuser.SearchUserScreen
 import com.chatapp.feature.contactdetail.ContactDetailScreen
 import com.chatapp.feature.auth.LoginScreen
 import com.chatapp.feature.auth.RegisterScreen
@@ -53,11 +55,29 @@ fun AppNavHost(
                 onContactClick = { userId ->
                     navController.navigate(Routes.contactDetail(userId))
                 },
+                onAddFriend = {
+                    navController.navigate(Routes.SEARCH_USER)
+                },
+                onFriendRequests = {
+                    navController.navigate(Routes.FRIEND_REQUESTS)
+                },
                 onLogout = {
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
                 },
+            )
+        }
+
+        composable(Routes.SEARCH_USER) {
+            SearchUserScreen(
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable(Routes.FRIEND_REQUESTS) {
+            FriendRequestsScreen(
+                onBack = { navController.popBackStack() },
             )
         }
 
