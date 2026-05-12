@@ -47,3 +47,12 @@ Thumbs.db
 
 # Temp files
 build_output.txt
+# Backend
+backend/node_modules/
+backend/.env
+backend/data/*.db
+backend/data/*.sqlite
+backend/data/*.txt
+backend/data/*.db-shm
+backend/data/*.db-wal
+backend/*.db
