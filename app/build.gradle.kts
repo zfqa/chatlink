@@ -74,6 +74,9 @@ dependencies {
 
     // Core
     implementation("androidx.core:core-ktx:1.13.1")
+
+    // Network / JSON
+    implementation("com.google.code.gson:gson:2.10.1")
 }
 
 kapt {

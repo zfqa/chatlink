@@ -26,12 +26,16 @@ class AuthViewModel @Inject constructor(
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
     init {
+        checkLocalSession()
+    }
+
+    private fun checkLocalSession() {
         viewModelScope.launch {
-            val saved = authRepo.checkSavedSession()
-            if (saved != null) {
-                _uiState.value = AuthUiState(isLoggedIn = true, isCheckingSession = false)
+            val hasToken = authRepo.isLoggedIn()
+            _uiState.value = if (hasToken) {
+                AuthUiState(isLoggedIn = true, isCheckingSession = false)
             } else {
-                _uiState.value = AuthUiState(isCheckingSession = false)
+                AuthUiState(isCheckingSession = false)
             }
         }
     }

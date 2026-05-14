@@ -19,10 +19,11 @@ import com.chatapp.feature.chatdetail.ChatDetailScreen
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
+    startAtMain: Boolean = false,
 ) {
     NavHost(
         navController = navController,
-        startDestination = Routes.LOGIN,
+        startDestination = if (startAtMain) Routes.MAIN else Routes.LOGIN,
         modifier = modifier,
     ) {
         composable(Routes.LOGIN) {
