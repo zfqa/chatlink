@@ -1,5 +1,6 @@
 package com.chatapp.data.repository
 
+import android.util.Log
 import com.chatapp.core.model.Conversation
 import com.chatapp.core.model.Message
 import com.chatapp.data.remote.ApiException
@@ -25,6 +26,7 @@ class RealConversationRepository @Inject constructor(
 
     private val conversationsFlow = MutableStateFlow<List<Conversation>>(emptyList())
     private val messagesFlows = mutableMapOf<String, MutableStateFlow<List<Message>>>()
+    private companion object { const val TAG = "ConvRepo" }
 
     override fun getConversations(): Flow<List<Conversation>> = conversationsFlow
 
@@ -98,6 +100,19 @@ class RealConversationRepository @Inject constructor(
     }
 
     fun getCurrentUserId(): String? = tokenStore.getUserId()
+
+    /**
+     * Called by WebSocketManager when a new message arrives.
+     * Appends to messages flow and updates conversation list.
+     */
+    fun onIncomingMessage(message: Message) {
+        val flow = messagesFlows.getOrPut(message.conversationId) { MutableStateFlow(emptyList()) }
+        // Avoid duplicates
+        if (flow.value.any { it.id == message.id }) return
+        flow.value = flow.value + message
+        updateConversationLastMessage(message.conversationId, message.content, message.timestamp)
+        Log.d(TAG, "onIncomingMessage: conv=${message.conversationId} msgId=${message.id}")
+    }
 
     private fun updateConversationLastMessage(conversationId: String, content: String, timestamp: Long) {
         val current = conversationsFlow.value.map { conv ->

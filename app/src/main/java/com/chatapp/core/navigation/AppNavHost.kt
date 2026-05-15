@@ -20,6 +20,8 @@ fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     startAtMain: Boolean = false,
+    onLoginSuccess: () -> Unit = {},
+    onLogout: () -> Unit = {},
 ) {
     NavHost(
         navController = navController,
@@ -29,6 +31,7 @@ fun AppNavHost(
         composable(Routes.LOGIN) {
             LoginScreen(
                 onLoginSuccess = {
+                    onLoginSuccess()
                     navController.navigate(Routes.MAIN) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
@@ -40,6 +43,7 @@ fun AppNavHost(
         composable(Routes.REGISTER) {
             RegisterScreen(
                 onRegisterSuccess = {
+                    onLoginSuccess()
                     navController.navigate(Routes.MAIN) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
@@ -63,6 +67,7 @@ fun AppNavHost(
                     navController.navigate(Routes.FRIEND_REQUESTS)
                 },
                 onLogout = {
+                    onLogout()
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
@@ -74,6 +79,7 @@ fun AppNavHost(
             SearchUserScreen(
                 onBack = { navController.popBackStack() },
                 onAuthError = {
+                    onLogout()
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
@@ -85,6 +91,7 @@ fun AppNavHost(
             FriendRequestsScreen(
                 onBack = { navController.popBackStack() },
                 onAuthError = {
+                    onLogout()
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
@@ -103,6 +110,7 @@ fun AppNavHost(
                     navController.navigate(Routes.chatDetail(conversationId))
                 },
                 onAuthError = {
+                    onLogout()
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
@@ -119,6 +127,7 @@ fun AppNavHost(
                 conversationId = conversationId,
                 onBack = { navController.popBackStack() },
                 onAuthError = {
+                    onLogout()
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
