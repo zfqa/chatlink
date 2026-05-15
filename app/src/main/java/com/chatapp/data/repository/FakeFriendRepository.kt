@@ -36,7 +36,7 @@ class FakeFriendRepository @Inject constructor(
         }
     }
 
-    override fun searchUsers(query: String): List<User> {
+    override suspend fun searchUsers(query: String): List<User> {
         if (query.isBlank()) return emptyList()
         val q = query.lowercase()
         return FakeData.allUsers.filter {
@@ -44,7 +44,7 @@ class FakeFriendRepository @Inject constructor(
         }
     }
 
-    override fun searchAllUsers(): List<User> = FakeData.allUsers
+    override suspend fun searchAllUsers(): List<User> = FakeData.allUsers
 
     override suspend fun sendRequest(toUserId: String) {
         val existing = FakeData.friendRequests.find {

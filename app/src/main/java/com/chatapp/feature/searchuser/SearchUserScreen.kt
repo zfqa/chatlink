@@ -8,6 +8,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,9 +26,15 @@ import com.chatapp.core.ui.components.LoadingView
 @Composable
 fun SearchUserScreen(
     onBack: () -> Unit,
+    onAuthError: () -> Unit = {},
     viewModel: SearchUserViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val authError by viewModel.authError.collectAsStateWithLifecycle()
+
+    LaunchedEffect(authError) {
+        if (authError) onAuthError()
+    }
 
     Scaffold(
         topBar = {

@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -29,10 +30,16 @@ fun ContactsScreen(
     onContactClick: (String) -> Unit,
     onAddFriend: () -> Unit,
     onFriendRequests: () -> Unit,
+    onAuthError: () -> Unit = {},
     viewModel: ContactsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pendingCount by viewModel.pendingRequestCount.collectAsStateWithLifecycle()
+    val authError by viewModel.authError.collectAsStateWithLifecycle()
+
+    LaunchedEffect(authError) {
+        if (authError) onAuthError()
+    }
     when (val state = uiState) {
         is UiState.Loading -> {
             ContactsContent(

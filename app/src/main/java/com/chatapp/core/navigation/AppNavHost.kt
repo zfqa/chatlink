@@ -73,12 +73,22 @@ fun AppNavHost(
         composable(Routes.SEARCH_USER) {
             SearchUserScreen(
                 onBack = { navController.popBackStack() },
+                onAuthError = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
             )
         }
 
         composable(Routes.FRIEND_REQUESTS) {
             FriendRequestsScreen(
                 onBack = { navController.popBackStack() },
+                onAuthError = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
             )
         }
 

@@ -74,6 +74,7 @@ fun MainScreen(
                     onContactClick = onContactClick,
                     onAddFriend = onAddFriend,
                     onFriendRequests = onFriendRequests,
+                    onAuthError = onLogout,
                 )
             }
             composable(BottomNavItem.DISCOVER.route) {

@@ -48,6 +48,26 @@ object NetworkConfig {
         return readResponse(conn)
     }
 
+    /**
+     * PUT request with JSON body, returns raw response string.
+     */
+    fun putJson(path: String, body: Any? = null, token: String? = null): String {
+        val url = URL("$BASE_URL/api/v1$path")
+        val conn = url.openConnection() as HttpURLConnection
+        conn.requestMethod = "PUT"
+        conn.setRequestProperty("Content-Type", "application/json")
+        conn.setRequestProperty("Accept", "application/json")
+        if (token != null) conn.setRequestProperty("Authorization", "Bearer $token")
+        conn.doOutput = true
+        conn.connectTimeout = 8000
+        conn.readTimeout = 8000
+        if (body != null) {
+            val json = gson.toJson(body)
+            conn.outputStream.use { os: OutputStream -> os.write(json.toByteArray()) }
+        }
+        return readResponse(conn)
+    }
+
     private fun readResponse(conn: HttpURLConnection): String {
         val code = conn.responseCode
         val stream = if (code in 200..299) conn.inputStream else conn.errorStream
@@ -59,6 +79,4 @@ object NetworkConfig {
     inline fun <reified T> parseResponse(raw: String): T {
         return gson.fromJson(raw, object : TypeToken<T>() {}.type)
     }
-
-    class ApiException(val httpCode: Int, val responseBody: String) : Exception("HTTP $httpCode: $responseBody")
 }
