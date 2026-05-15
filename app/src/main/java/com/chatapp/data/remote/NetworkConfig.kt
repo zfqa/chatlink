@@ -1,16 +1,15 @@
 package com.chatapp.data.remote
 
+import com.chatapp.app.BuildConfig
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
 object NetworkConfig {
-    // Use adb reverse tcp:3000 tcp:3000 for real device testing
-    var BASE_URL = "http://127.0.0.1:3000"
+    var BASE_URL = BuildConfig.API_BASE_URL
 
     val gson = Gson()
 

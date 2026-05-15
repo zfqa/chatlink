@@ -43,6 +43,9 @@ Base URL: `http://localhost:3000/api/v1`
 - `GET /conversations/:id/messages?before=&limit=` - Get messages
 - `POST /conversations/:id/messages` - Send text message
 
+### Health
+- `GET /health` - Server health check
+
 ## WebSocket
 
 Connect to receive real-time message notifications.
@@ -55,6 +58,7 @@ ws://localhost:3000/ws?token=JWT_ACCESS_TOKEN
 
 - Token is required and verified against `JWT_ACCESS_SECRET`
 - Invalid or missing token will close the connection with code 4001/4002
+- Runs on the same port as HTTP (no separate port needed)
 
 ### Server Events
 
@@ -117,11 +121,26 @@ ws://localhost:3000/ws?token=JWT_ACCESS_TOKEN
 
 ## Environment Variables
 
-See `.env.example`.
+See `.env.example`. Key variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | 3000 | Server port |
+| `NODE_ENV` | development | `development` or `production` |
+| `JWT_ACCESS_SECRET` | (required) | Secret for access tokens |
+| `JWT_REFRESH_SECRET` | (required) | Secret for refresh tokens |
+| `JWT_ACCESS_EXPIRES_IN` | 24h | Access token lifetime |
+| `JWT_REFRESH_EXPIRES_IN` | 30d | Refresh token lifetime |
+| `DATABASE_PATH` | ./data/chatlink.db | SQLite database file path |
+| `ALLOWED_ORIGINS` | * | CORS allowed origins (comma-separated) |
 
 ## Database
 
-SQLite at `./data/chatlink.db`. Auto-created on first run.
+SQLite at `./data/chatlink.db`. Auto-created on first run. Uses WAL mode for concurrent reads.
+
+## Deployment
+
+See `docs/DEPLOYMENT.md` for full deployment guide (Nginx, pm2, HTTPS, firewall).
 
 ## API Contract
 

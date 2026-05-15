@@ -26,6 +26,10 @@ android {
         versionName = "1.0.0"
 
         vectorDrawables.useSupportLibrary = true
+
+        // API base URL — override in local.properties for production
+        val apiBase = localProperties.getProperty("API_BASE_URL", "http://10.0.2.2:3000")
+        buildConfigField("String", "API_BASE_URL", "\"$apiBase\"")
     }
 
     buildTypes {
@@ -46,6 +50,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

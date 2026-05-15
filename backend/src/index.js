@@ -12,7 +12,19 @@ const conversationRoutes = require('./routes/conversations');
 const messageRoutes = require('./routes/messages');
 
 const app = express();
-app.use(cors());
+
+// Trust proxy for rate limiting / IP detection behind nginx
+app.set('trust proxy', 1);
+
+// CORS — allow configured origins in production, all in development
+const allowedOrigins = process.env.ALLOWED_ORIGINS;
+if (allowedOrigins && allowedOrigins !== '*') {
+  const origins = allowedOrigins.split(',').map(o => o.trim());
+  app.use(cors({ origin: origins, credentials: true }));
+} else {
+  app.use(cors());
+}
+
 app.use(express.json());
 
 app.use('/api/v1/auth', authRoutes);
@@ -37,5 +49,6 @@ const server = http.createServer(app);
 initWebSocket(server);
 
 server.listen(PORT, () => {
-  console.log('ChatLink backend running on port ' + PORT);
+  const env = process.env.NODE_ENV || 'development';
+  console.log(`ChatLink backend [${env}] running on port ${PORT}`);
 });
