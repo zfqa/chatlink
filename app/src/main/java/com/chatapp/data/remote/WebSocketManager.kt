@@ -11,6 +11,7 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -19,60 +20,69 @@ import javax.inject.Singleton
 class WebSocketManager @Inject constructor(
     private val tokenStore: TokenStore,
 ) {
+    private enum class State { DISCONNECTED, CONNECTING, CONNECTED, DISCONNECTING }
+
     private var ws: WebSocket? = null
-    private var isConnected = false
+    private var state = State.DISCONNECTED
     private var reconnectAttempts = 0
     private val maxReconnects = 3
     private val gson = Gson()
+    private val reconnectExecutor = Executors.newSingleThreadScheduledExecutor()
 
     var onMessageReceived: ((Message) -> Unit)? = null
 
     private val client = OkHttpClient.Builder()
-        .readTimeout(0, TimeUnit.MILLISECONDS) // no read timeout for WS
+        .readTimeout(0, TimeUnit.MILLISECONDS)
         .build()
 
+    @Synchronized
     fun connect() {
+        if (state == State.CONNECTED || state == State.CONNECTING) return
         val token = tokenStore.getAccessToken() ?: return
-        if (isConnected) return
 
+        state = State.CONNECTING
         val wsUrl = NetworkConfig.BASE_URL
             .replace("http://", "ws://")
             .replace("https://", "wss://") + "/ws?token=$token"
 
-        Log.d(TAG, "Connecting to WS (token=${token.take(8)}...)")
+        Log.d(TAG, "Connecting...")
 
-        val request = Request.Builder()
-            .url(wsUrl)
-            .build()
+        val request = Request.Builder().url(wsUrl).build()
 
         ws = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
+                synchronized(this@WebSocketManager) {
+                    if (state == State.DISCONNECTING || state == State.DISCONNECTED) {
+                        webSocket.close(1000, "cancelled")
+                        return
+                    }
+                    state = State.CONNECTED
+                    reconnectAttempts = 0
+                }
                 Log.d(TAG, "Connected")
-                isConnected = true
-                reconnectAttempts = 0
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
-                Log.d(TAG, "Received: ${text.take(100)}")
+                Log.d(TAG, "Received: ${text.take(80)}")
                 try {
                     val json = gson.fromJson(text, JsonObject::class.java)
                     val type = json.get("type")?.asString
-                    if (type == "message:new") {
-                        handleMessageNew(json.getAsJsonObject("data"))
+                    when (type) {
+                        "message:new" -> handleMessageNew(json.getAsJsonObject("data"))
+                        "connected" -> Log.d(TAG, "Server confirmed connection")
+                        else -> Log.d(TAG, "Event: $type")
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Parse error", e)
+                    Log.e(TAG, "Parse error: ${e.message}")
                 }
             }
 
             override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-                Log.d(TAG, "Closing: code=$code reason=$reason")
                 webSocket.close(1000, null)
                 handleDisconnect()
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                Log.d(TAG, "Closed: code=$code")
                 handleDisconnect()
             }
 
@@ -83,29 +93,39 @@ class WebSocketManager @Inject constructor(
         })
     }
 
+    @Synchronized
     fun disconnect() {
         Log.d(TAG, "Disconnecting")
-        reconnectAttempts = maxReconnects // prevent reconnect
+        state = State.DISCONNECTING
+        reconnectAttempts = maxReconnects
         ws?.close(1000, "logout")
         ws = null
-        isConnected = false
+        state = State.DISCONNECTED
     }
 
+    @Synchronized
     private fun handleDisconnect() {
-        isConnected = false
-        if (reconnectAttempts < maxReconnects) {
-            reconnectAttempts++
-            val delay = (1000L * reconnectAttempts)
-            Log.d(TAG, "Reconnecting in ${delay}ms (attempt $reconnectAttempts/$maxReconnects)")
-            Thread {
-                Thread.sleep(delay)
-                if (!isConnected && tokenStore.getAccessToken() != null) {
-                    connect()
-                }
-            }.start()
-        } else {
+        if (state == State.DISCONNECTING || state == State.DISCONNECTED) return
+        state = State.DISCONNECTED
+        ws = null
+
+        if (reconnectAttempts >= maxReconnects) {
             Log.d(TAG, "Max reconnect attempts reached")
+            return
         }
+        if (tokenStore.getAccessToken() == null) {
+            Log.d(TAG, "No token, skipping reconnect")
+            return
+        }
+
+        reconnectAttempts++
+        val delay = 1000L * reconnectAttempts
+        Log.d(TAG, "Reconnecting in ${delay}ms (attempt $reconnectAttempts/$maxReconnects)")
+        reconnectExecutor.schedule({
+            if (state == State.DISCONNECTED && tokenStore.getAccessToken() != null) {
+                connect()
+            }
+        }, delay, TimeUnit.MILLISECONDS)
     }
 
     private fun handleMessageNew(data: JsonObject) {
@@ -122,10 +142,10 @@ class WebSocketManager @Inject constructor(
                 timestamp = data.get("createdAt").asLong,
                 status = MessageStatus.SENT,
             )
-            Log.d(TAG, "New message: conv=${msg.conversationId} from=${msg.senderId}")
+            Log.d(TAG, "message:new conv=${msg.conversationId}")
             onMessageReceived?.invoke(msg)
         } catch (e: Exception) {
-            Log.e(TAG, "handleMessageNew error", e)
+            Log.e(TAG, "handleMessageNew error: ${e.message}")
         }
     }
 

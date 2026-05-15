@@ -26,7 +26,11 @@ class RealConversationRepository @Inject constructor(
 
     private val conversationsFlow = MutableStateFlow<List<Conversation>>(emptyList())
     private val messagesFlows = mutableMapOf<String, MutableStateFlow<List<Message>>>()
-    private companion object { const val TAG = "ConvRepo" }
+    private val recentSentIds = LinkedHashSet<String>() // track recently sent message IDs for dedup
+    private companion object {
+        const val TAG = "ConvRepo"
+        const val MAX_SENT_IDS = 100
+    }
 
     override fun getConversations(): Flow<List<Conversation>> = conversationsFlow
 
@@ -36,25 +40,24 @@ class RealConversationRepository @Inject constructor(
 
     suspend fun fetchConversations(): List<Conversation> = withContext(Dispatchers.IO) {
         val token = requireToken()
-        android.util.Log.d("ConvRepo", "GET /conversations token=${token.take(8)}...")
+        Log.d(TAG, "GET /conversations")
         val raw = NetworkConfig.getJson("/conversations", token)
         val resp = NetworkConfig.parseResponse<ConversationsResponse>(raw)
         val list = if (resp.code != 0) emptyList()
                    else resp.data?.conversations?.map { it.toModel() } ?: emptyList()
-        android.util.Log.d("ConvRepo", "GET /conversations -> code=${resp.code}, count=${list.size}")
+        Log.d(TAG, "GET /conversations -> count=${list.size}")
         conversationsFlow.value = list
         list
     }
 
     suspend fun fetchMessages(conversationId: String): List<Message> = withContext(Dispatchers.IO) {
         val token = requireToken()
-        val path = "/conversations/$conversationId/messages"
-        android.util.Log.d("ConvRepo", "GET $path token=${token.take(8)}...")
-        val raw = NetworkConfig.getJson(path, token)
+        Log.d(TAG, "GET /conversations/$conversationId/messages")
+        val raw = NetworkConfig.getJson("/conversations/$conversationId/messages", token)
         val resp = NetworkConfig.parseResponse<MessagesResponse>(raw)
         val list = if (resp.code != 0) emptyList()
                    else resp.data?.messages?.map { it.toModel() } ?: emptyList()
-        android.util.Log.d("ConvRepo", "GET $path -> code=${resp.code}, count=${list.size}")
+        Log.d(TAG, "GET messages -> count=${list.size}")
         val flow = messagesFlows.getOrPut(conversationId) { MutableStateFlow(emptyList()) }
         flow.value = list
         list
@@ -62,17 +65,29 @@ class RealConversationRepository @Inject constructor(
 
     override suspend fun sendMessage(conversationId: String, content: String): Message = withContext(Dispatchers.IO) {
         val token = requireToken()
-        val path = "/conversations/$conversationId/messages"
         val body = mapOf("content" to content, "type" to "TEXT")
-        android.util.Log.d("ConvRepo", "POST $path body=$body token=${token.take(8)}...")
-        val raw = NetworkConfig.postJson(path, body, token)
+        Log.d(TAG, "POST /conversations/$conversationId/messages")
+        val raw = NetworkConfig.postJson("/conversations/$conversationId/messages", body, token)
         val resp = NetworkConfig.parseResponse<SendMessageResponse>(raw)
         if (resp.code != 0 || resp.data == null) throw Exception(resp.message)
         val msg = resp.data.message.toModel()
-        android.util.Log.d("ConvRepo", "POST $path -> code=${resp.code}, msgId=${msg.id}")
+        Log.d(TAG, "POST message -> msgId=${msg.id}")
+
+        // Track sent ID so WS push for same message is ignored
+        synchronized(recentSentIds) {
+            recentSentIds.add(msg.id)
+            if (recentSentIds.size > MAX_SENT_IDS) {
+                val iter = recentSentIds.iterator()
+                iter.next()
+                iter.remove()
+            }
+        }
+
         // Append to local messages flow
         val flow = messagesFlows.getOrPut(conversationId) { MutableStateFlow(emptyList()) }
-        flow.value = flow.value + msg
+        if (flow.value.none { it.id == msg.id }) {
+            flow.value = flow.value + msg
+        }
         // Update conversation list
         updateConversationLastMessage(conversationId, content, msg.timestamp)
         msg
@@ -80,21 +95,15 @@ class RealConversationRepository @Inject constructor(
 
     override suspend fun getOrCreateConversationForPeer(peerId: String): Conversation = withContext(Dispatchers.IO) {
         val token = requireToken()
-        val body = mapOf("peerId" to peerId)
-        android.util.Log.d("ConvRepo", "POST /conversations/direct body=$body token=${token.take(8)}...")
-        val raw = NetworkConfig.postJson("/conversations/direct", body, token)
+        Log.d(TAG, "POST /conversations/direct peerId=$peerId")
+        val raw = NetworkConfig.postJson("/conversations/direct", mapOf("peerId" to peerId), token)
         val resp = NetworkConfig.parseResponse<DirectConversationResponse>(raw)
         if (resp.code != 0 || resp.data == null) throw Exception(resp.message)
         val conv = resp.data.conversation.toModel()
-        android.util.Log.d("ConvRepo", "POST /conversations/direct -> code=${resp.code}, convId=${conv.id}")
-        // Update conversations list if this is a new conversation
+        Log.d(TAG, "POST /conversations/direct -> convId=${conv.id}")
         val current = conversationsFlow.value.toMutableList()
         val existing = current.indexOfFirst { it.id == conv.id }
-        if (existing >= 0) {
-            current[existing] = conv
-        } else {
-            current.add(0, conv)
-        }
+        if (existing >= 0) current[existing] = conv else current.add(0, conv)
         conversationsFlow.value = current
         conv
     }
@@ -103,24 +112,36 @@ class RealConversationRepository @Inject constructor(
 
     /**
      * Called by WebSocketManager when a new message arrives.
-     * Appends to messages flow and updates conversation list.
+     * Deduplicates against both existing messages and recently sent messages.
      */
     fun onIncomingMessage(message: Message) {
+        // Skip if this message was sent by us via HTTP (already in the list)
+        synchronized(recentSentIds) {
+            if (recentSentIds.contains(message.id)) {
+                Log.d(TAG, "WS skip: msgId=${message.id} (recently sent via HTTP)")
+                return
+            }
+        }
+
         val flow = messagesFlows.getOrPut(message.conversationId) { MutableStateFlow(emptyList()) }
-        // Avoid duplicates
-        if (flow.value.any { it.id == message.id }) return
+        // Deduplicate against existing messages
+        if (flow.value.any { it.id == message.id }) {
+            Log.d(TAG, "WS skip: msgId=${message.id} (already in list)")
+            return
+        }
+
         flow.value = flow.value + message
         updateConversationLastMessage(message.conversationId, message.content, message.timestamp)
-        Log.d(TAG, "onIncomingMessage: conv=${message.conversationId} msgId=${message.id}")
+        Log.d(TAG, "WS appended: conv=${message.conversationId} msgId=${message.id}")
     }
 
     private fun updateConversationLastMessage(conversationId: String, content: String, timestamp: Long) {
-        val current = conversationsFlow.value.map { conv ->
-            if (conv.id == conversationId) {
-                conv.copy(lastMessage = content, lastMessageTime = timestamp)
-            } else conv
-        }.sortedByDescending { it.lastMessageTime }
-        conversationsFlow.value = current
+        val current = conversationsFlow.value.toMutableList()
+        val idx = current.indexOfFirst { it.id == conversationId }
+        if (idx >= 0) {
+            current[idx] = current[idx].copy(lastMessage = content, lastMessageTime = timestamp)
+        }
+        conversationsFlow.value = current.sortedByDescending { it.lastMessageTime }
     }
 
     private fun requireToken(): String {
