@@ -8,5 +8,5 @@ interface ConversationRepository {
     fun getConversations(): Flow<List<Conversation>>
     fun getMessages(conversationId: String): Flow<List<Message>>
     suspend fun sendMessage(conversationId: String, content: String): Message
-    fun getOrCreateConversationForPeer(peerId: String): Conversation
+    suspend fun getOrCreateConversationForPeer(peerId: String): Conversation
 }

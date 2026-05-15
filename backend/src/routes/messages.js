@@ -2,6 +2,7 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
+const { broadcastToConversation } = require('../ws');
 
 const router = express.Router();
 
@@ -30,6 +31,20 @@ router.post('/:conversationId/messages', authMiddleware, (req, res) => {
   // Increment unread count for other participants
   db.prepare('UPDATE conversation_participants SET unread_count = unread_count + 1 WHERE conversation_id = ? AND user_id != ?').run(conversationId, req.userId);
   const message = { id, conversationId, senderId: req.userId, content, type: type || 'TEXT', timestamp: now, status: 'SENT' };
+
+  // Broadcast to online conversation members via WebSocket
+  broadcastToConversation(conversationId, req.userId, {
+    type: 'message:new',
+    data: {
+      id: message.id,
+      conversationId: message.conversationId,
+      senderId: message.senderId,
+      content: message.content,
+      type: message.type.toLowerCase(),
+      createdAt: message.timestamp,
+    },
+  });
+
   res.json({ code: 0, message: 'success', data: { message } });
 });
 

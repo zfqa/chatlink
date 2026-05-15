@@ -102,6 +102,11 @@ fun AppNavHost(
                 onSendMessage = { conversationId ->
                     navController.navigate(Routes.chatDetail(conversationId))
                 },
+                onAuthError = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
             )
         }
 
@@ -113,6 +118,11 @@ fun AppNavHost(
             ChatDetailScreen(
                 conversationId = conversationId,
                 onBack = { navController.popBackStack() },
+                onAuthError = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
             )
         }
     }

@@ -1,6 +1,8 @@
 require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') });
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
+const { initWebSocket } = require('./ws');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -29,6 +31,11 @@ app.use((req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = http.createServer(app);
+
+// Initialize WebSocket on the same server
+initWebSocket(server);
+
+server.listen(PORT, () => {
   console.log('ChatLink backend running on port ' + PORT);
 });

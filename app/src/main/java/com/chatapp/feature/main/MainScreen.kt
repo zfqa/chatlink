@@ -67,7 +67,10 @@ fun MainScreen(
             modifier = Modifier.padding(padding),
         ) {
             composable(BottomNavItem.CHATS.route) {
-                ChatsScreen(onConversationClick = onConversationClick)
+                ChatsScreen(
+                    onConversationClick = onConversationClick,
+                    onAuthError = onLogout,
+                )
             }
             composable(BottomNavItem.CONTACTS.route) {
                 ContactsScreen(

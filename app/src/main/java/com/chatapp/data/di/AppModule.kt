@@ -1,6 +1,6 @@
 package com.chatapp.data.di
 
-import com.chatapp.data.repository.FakeConversationRepository
+import com.chatapp.data.repository.RealConversationRepository
 import com.chatapp.data.repository.RealAuthRepository
 import com.chatapp.data.repository.RealContactRepository
 import com.chatapp.data.repository.RealFriendRepository
@@ -26,7 +26,7 @@ abstract class AppModule {
 
     @Binds
     @Singleton
-    abstract fun bindConversationRepository(impl: FakeConversationRepository): ConversationRepository
+    abstract fun bindConversationRepository(impl: RealConversationRepository): ConversationRepository
 
     @Binds
     @Singleton

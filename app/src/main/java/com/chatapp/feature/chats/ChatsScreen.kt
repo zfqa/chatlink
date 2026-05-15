@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,9 +26,15 @@ import com.chatapp.core.ui.components.LoadingView
 @Composable
 fun ChatsScreen(
     onConversationClick: (String) -> Unit,
+    onAuthError: () -> Unit = {},
     viewModel: ChatsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val authError by viewModel.authError.collectAsStateWithLifecycle()
+
+    LaunchedEffect(authError) {
+        if (authError) onAuthError()
+    }
 
     when (val state = uiState) {
         is UiState.Loading -> LoadingView()

@@ -51,7 +51,7 @@ class FakeConversationRepository @Inject constructor(
         return msg
     }
 
-    override fun getOrCreateConversationForPeer(peerId: String): Conversation {
+    override suspend fun getOrCreateConversationForPeer(peerId: String): Conversation {
         val conv = FakeData.getOrCreateConversation(peerId)
         conversationsFlow.value = FakeData.conversations
         return conv

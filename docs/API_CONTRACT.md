@@ -596,70 +596,58 @@ Authorization: Bearer <access_token>
 
 ---
 
-## 10. WebSocket 合约（预留）
+## 10. WebSocket 实时消息
 
 ### 连接地址
+
 ```
 ws://<host>:<port>/ws?token=<access_token>
 ```
 
-### 消息格式
+- Token 通过 URL query 参数传递，使用 `JWT_ACCESS_SECRET` 校验
+- 缺少 token 关闭码 `4001`，token 无效/过期关闭码 `4002`
+- 一个用户可持有多个连接（多设备）
 
-**服务端推送新消息：**
+### 服务端事件
+
+#### `connected` — 连接成功后立即推送
+
 ```json
 {
-  "event": "new_message",
+  "type": "connected",
+  "data": {
+    "userId": "u_abc123",
+    "serverTime": 1710000000000
+  }
+}
+```
+
+#### `message:new` — 会话中有新消息时推送给会话内其他在线成员
+
+```json
+{
+  "type": "message:new",
   "data": {
     "id": "m_003",
     "conversationId": "conv_1",
     "senderId": "u_def456",
     "content": "Hi!",
-    "type": "TEXT",
-    "timestamp": 1700000001000,
-    "status": "SENT"
+    "type": "text",
+    "createdAt": 1710000001000
   }
 }
 ```
 
-**服务端推送好友申请：**
-```json
-{
-  "event": "friend_request",
-  "data": {
-    "request": { ... }
-  }
-}
-```
+触发方式：通过 `POST /conversations/:id/messages` 发送消息后自动推送。
 
-**服务端推送好友接受：**
-```json
-{
-  "event": "friend_accepted",
-  "data": {
-    "user": { ... }
-  }
-}
-```
+### 行为说明
 
-**客户端发送消息：**
-```json
-{
-  "event": "send_message",
-  "data": {
-    "conversationId": "conv_1",
-    "content": "Hello!",
-    "type": "TEXT"
-  }
-}
-```
+- 消息发送者不会收到自己的推送（跳过 senderId）
+- 离线用户不会收到推送（无消息队列），上线后通过 HTTP 拉取历史消息
+- 服务端每 30 秒发送 ping 心跳，客户端需以 pong 响应
+- 无响应的连接将被终止
 
-**客户端确认消息已读：**
-```json
-{
-  "event": "read_receipt",
-  "data": {
-    "conversationId": "conv_1",
-    "lastReadMessageId": "m_003"
-  }
-}
-```
+### 客户端当前限制
+
+当前 Android 客户端尚未接入 WebSocket，消息通过 HTTP 轮询获取。
+WebSocket 客户端接入将在后续阶段实现。

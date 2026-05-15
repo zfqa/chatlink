@@ -23,17 +23,22 @@ import com.chatapp.core.ui.components.ErrorView
 import com.chatapp.core.ui.components.LoadingView
 import com.chatapp.core.ui.theme.ChatBubbleOther
 import com.chatapp.core.ui.theme.ChatBubbleSelf
-import com.chatapp.data.repository.FakeData
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatDetailScreen(
     conversationId: String,
     onBack: () -> Unit,
+    onAuthError: () -> Unit = {},
     viewModel: ChatDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val inputText by viewModel.inputText.collectAsStateWithLifecycle()
+    val authError by viewModel.authError.collectAsStateWithLifecycle()
+
+    LaunchedEffect(authError) {
+        if (authError) onAuthError()
+    }
 
     val peerName = when (val s = uiState) {
         is UiState.Content -> s.data.peerName
@@ -43,10 +48,10 @@ fun ChatDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(peerName.ifBlank { "聊天" }) },
+                title = { Text(peerName.ifBlank { "Chat" }) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -61,9 +66,9 @@ fun ChatDetailScreen(
             Box(modifier = Modifier.weight(1f)) {
                 when (val state = uiState) {
                     is UiState.Loading -> LoadingView()
-                    is UiState.Empty -> EmptyState(message = "发送一条消息开始聊天吧")
+                    is UiState.Empty -> EmptyState(message = "Send a message to start chatting")
                     is UiState.Error -> ErrorView(message = state.message)
-                    is UiState.Content -> MessageList(state.data.messages)
+                    is UiState.Content -> MessageList(state.data.messages, viewModel.currentUserId)
                 }
             }
             ChatInputBar(text = inputText, onTextChange = viewModel::onInputChange, onSend = viewModel::sendMessage)
@@ -72,7 +77,7 @@ fun ChatDetailScreen(
 }
 
 @Composable
-private fun MessageList(messages: List<Message>) {
+private fun MessageList(messages: List<Message>, currentUserId: String) {
     val listState = rememberLazyListState()
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) { listState.animateScrollToItem(messages.lastIndex) }
@@ -83,15 +88,15 @@ private fun MessageList(messages: List<Message>) {
         contentPadding = PaddingValues(vertical = 8.dp),
     ) {
         items(messages, key = { it.id }) { msg ->
-            MessageBubble(message = msg)
+            MessageBubble(message = msg, currentUserId = currentUserId)
             Spacer(Modifier.height(4.dp))
         }
     }
 }
 
 @Composable
-private fun MessageBubble(message: Message) {
-    val isSelf = message.senderId == FakeData.me.id
+private fun MessageBubble(message: Message, currentUserId: String) {
+    val isSelf = message.senderId == currentUserId
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = if (isSelf) Arrangement.End else Arrangement.Start) {
         Box(
             modifier = Modifier.widthIn(max = 280.dp).background(color = if (isSelf) ChatBubbleSelf else ChatBubbleOther, shape = RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 8.dp),
