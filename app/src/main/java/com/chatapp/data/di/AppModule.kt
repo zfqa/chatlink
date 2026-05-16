@@ -4,7 +4,7 @@ import com.chatapp.data.repository.RealConversationRepository
 import com.chatapp.data.repository.RealAuthRepository
 import com.chatapp.data.repository.RealContactRepository
 import com.chatapp.data.repository.RealFriendRepository
-import com.chatapp.data.repository.FakeUserRepository
+import com.chatapp.data.repository.RealUserRepository
 import com.chatapp.domain.repository.ContactRepository
 import com.chatapp.domain.repository.ConversationRepository
 import com.chatapp.domain.repository.AuthRepository
@@ -34,7 +34,7 @@ abstract class AppModule {
 
     @Binds
     @Singleton
-    abstract fun bindUserRepository(impl: FakeUserRepository): UserRepository
+    abstract fun bindUserRepository(impl: RealUserRepository): UserRepository
 
     @Binds
     @Singleton

@@ -58,7 +58,7 @@ private fun ProfileContent(data: ProfileUiData, onLogout: () -> Unit) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(text = data.user.nickname, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(4.dp))
-                        Text(text = "微信号: ${'$'}{data.user.id}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                        Text(text = "账号: ${data.user.id}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                         if (data.user.signature.isNotBlank()) {
                             Spacer(Modifier.height(2.dp))
                             Text(text = data.user.signature, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
@@ -79,7 +79,7 @@ private fun ProfileContent(data: ProfileUiData, onLogout: () -> Unit) {
                 onClick = onLogout,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             ) {
-                Text("Exit Login")
+                Text("退出登录")
             }
         }
     }
