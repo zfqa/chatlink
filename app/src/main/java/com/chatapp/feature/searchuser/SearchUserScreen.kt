@@ -30,6 +30,7 @@ fun SearchUserScreen(
     viewModel: SearchUserViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val query by viewModel.query.collectAsStateWithLifecycle()
     val authError by viewModel.authError.collectAsStateWithLifecycle()
 
     LaunchedEffect(authError) {
@@ -55,7 +56,7 @@ fun SearchUserScreen(
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             SearchBar(
-                query = if (uiState is UiState.Content) (uiState as UiState.Content).data.query else "",
+                query = query,
                 onQueryChange = viewModel::onQueryChange,
             )
             when (val state = uiState) {
