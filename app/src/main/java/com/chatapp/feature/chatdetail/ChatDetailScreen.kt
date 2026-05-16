@@ -2,6 +2,7 @@ package com.chatapp.feature.chatdetail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -13,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -48,7 +50,7 @@ fun ChatDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(peerName.ifBlank { "Chat" }) },
+                title = { Text(peerName.ifBlank { "聊天" }) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -62,11 +64,11 @@ fun ChatDetailScreen(
             )
         },
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+        Column(modifier = Modifier.padding(padding).fillMaxSize().imePadding()) {
             Box(modifier = Modifier.weight(1f)) {
                 when (val state = uiState) {
                     is UiState.Loading -> LoadingView()
-                    is UiState.Empty -> EmptyState(message = "Send a message to start chatting")
+                    is UiState.Empty -> EmptyState(message = "发送一条消息开始聊天吧")
                     is UiState.Error -> ErrorView(message = state.message)
                     is UiState.Content -> MessageList(state.data.messages, viewModel.currentUserId)
                 }
@@ -100,7 +102,7 @@ private fun MessageBubble(message: Message, currentUserId: String) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = if (isSelf) Arrangement.End else Arrangement.Start) {
         Box(
             modifier = Modifier.widthIn(max = 280.dp).background(color = if (isSelf) ChatBubbleSelf else ChatBubbleOther, shape = RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 8.dp),
-        ) { Text(text = message.content, style = MaterialTheme.typography.bodyLarge) }
+        ) { Text(text = message.content, style = MaterialTheme.typography.bodyLarge, color = Color.Black) }
     }
 }
 

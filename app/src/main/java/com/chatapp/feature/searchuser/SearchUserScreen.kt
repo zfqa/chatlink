@@ -40,7 +40,7 @@ fun SearchUserScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add Friend") },
+                title = { Text("添加好友") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -62,10 +62,10 @@ fun SearchUserScreen(
             when (val state = uiState) {
                 is UiState.Loading -> LoadingView()
                 is UiState.Error -> ErrorView(message = state.message)
-                is UiState.Empty -> EmptyState(message = "No results")
+                is UiState.Empty -> EmptyState(message = "请输入关键词搜索")
                 is UiState.Content -> {
                     if (state.data.results.isEmpty()) {
-                        EmptyState(message = "No users found")
+                        EmptyState(message = "未找到用户")
                     } else {
                         SearchResultsList(state.data, viewModel::sendRequest)
                     }
@@ -81,7 +81,7 @@ private fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
         value = query,
         onValueChange = onQueryChange,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        placeholder = { Text("Search by nickname or account...") },
+        placeholder = { Text("搜索昵称或账号...") },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
         singleLine = true,
     )
@@ -130,7 +130,7 @@ private fun SearchResultItem(
             isFriend -> {
                 Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)) {
                     Text(
-                        text = "Friend",
+                        text = "已是好友",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -139,14 +139,14 @@ private fun SearchResultItem(
             }
             isPending -> {
                 Text(
-                    text = "Requested",
+                    text = "已申请",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                 )
             }
             else -> {
                 Button(onClick = onAddFriend, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
-                    Text("Add", style = MaterialTheme.typography.labelMedium)
+                    Text("添加", style = MaterialTheme.typography.labelMedium)
                 }
             }
         }

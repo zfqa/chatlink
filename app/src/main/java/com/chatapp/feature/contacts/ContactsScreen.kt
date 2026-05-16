@@ -76,19 +76,19 @@ private fun ContactsContent(
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         // Add Friend entry
         item(key = "add_friend") {
-            ActionItem(title = "Add Friend", subtitle = "Search and add new friends", onClick = onAddFriend)
+            ActionItem(title = "添加好友", subtitle = "搜索并添加新朋友", onClick = onAddFriend)
         }
         // Friend Requests entry
         item(key = "friend_requests") {
             ActionItem(
-                title = "Friend Requests",
-                subtitle = if (pendingCount > 0) "$pendingCount pending" else "",
+                title = "好友请求",
+                subtitle = if (pendingCount > 0) "${pendingCount} 条待处理" else "",
                 onClick = onFriendRequests,
             )
         }
         item(key = "divider") { HorizontalDivider(modifier = Modifier.padding(start = 16.dp)) }
         if (contacts.isEmpty()) {
-            item { EmptyState(message = "No contacts yet") }
+            item { EmptyState(message = "暂无联系人") }
         }
         grouped.forEach { (initial, group) ->
             item(key = "header_" + initial) {
@@ -168,7 +168,7 @@ private fun ActionItem(title: String, subtitle: String, onClick: () -> Unit) {
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (title == "Friend Requests" && subtitle.contains("pending")) MaterialTheme.colorScheme.error
+                    color = if (title == "好友请求" && subtitle.contains("待处理")) MaterialTheme.colorScheme.error
                             else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 )
             }

@@ -28,7 +28,7 @@ fun MainScreen(
     val currentRoute = navBackStack?.destination?.route
 
     // Determine current tab title
-    val currentTitle = items.find { it.route == currentRoute }?.label ?: "ChatLink"
+    val currentTitle = items.find { it.route == currentRoute }?.label ?: "私密空间"
 
     Scaffold(
         topBar = {

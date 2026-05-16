@@ -31,7 +31,7 @@ class SearchUserViewModel @Inject constructor(
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 
-    private val _uiState = MutableStateFlow<UiState<SearchUserUiData>>(UiState.Loading)
+    private val _uiState = MutableStateFlow<UiState<SearchUserUiData>>(UiState.Empty)
     val uiState: StateFlow<UiState<SearchUserUiData>> = _uiState.asStateFlow()
 
     private val _pendingIds = mutableSetOf<String>()
@@ -40,10 +40,6 @@ class SearchUserViewModel @Inject constructor(
     val authError: StateFlow<Boolean> = _authError.asStateFlow()
 
     private var searchJob: Job? = null
-
-    init {
-        loadAllUsers("")
-    }
 
     fun onQueryChange(newQuery: String) {
         _query.value = newQuery
@@ -55,10 +51,13 @@ class SearchUserViewModel @Inject constructor(
     }
 
     private fun loadAllUsers(query: String) {
+        if (query.isBlank()) {
+            _uiState.value = UiState.Empty
+            return
+        }
         viewModelScope.launch {
             try {
-                val results = if (query.isBlank()) friendRepo.searchAllUsers()
-                              else friendRepo.searchUsers(query)
+                val results = friendRepo.searchUsers(query)
                 val friendIds = results.filter { friendRepo.isFriend(it.id) }.map { it.id }.toSet()
                 _uiState.value = UiState.Content(
                     SearchUserUiData(results = results, friendIds = friendIds, pendingIds = _pendingIds.toSet())

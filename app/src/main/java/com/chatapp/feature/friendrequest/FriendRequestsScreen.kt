@@ -37,7 +37,7 @@ fun FriendRequestsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Friend Requests") },
+                title = { Text("好友请求") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -53,7 +53,7 @@ fun FriendRequestsScreen(
     ) { padding ->
         when (val state = uiState) {
             is UiState.Loading -> LoadingView(modifier = Modifier.padding(padding))
-            is UiState.Empty -> EmptyState(message = "No pending requests", modifier = Modifier.padding(padding))
+            is UiState.Empty -> EmptyState(message = "暂无好友请求", modifier = Modifier.padding(padding))
             is UiState.Error -> EmptyState(message = state.message, modifier = Modifier.padding(padding))
             is UiState.Content -> FriendRequestsList(
                 requests = state.data.requests,
@@ -102,11 +102,11 @@ private fun FriendRequestItem(
         }
         Row {
             TextButton(onClick = { onReject(request.id) }) {
-                Text("Reject", color = MaterialTheme.colorScheme.error)
+                Text("拒绝", color = MaterialTheme.colorScheme.error)
             }
             Spacer(Modifier.width(4.dp))
             Button(onClick = { onAccept(request.id) }, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
-                Text("Accept")
+                Text("接受")
             }
         }
     }
