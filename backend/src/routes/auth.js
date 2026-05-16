@@ -20,7 +20,7 @@ router.post('/register', (req, res) => {
   const hash = bcrypt.hashSync(password, 10);
   const now = Date.now();
   db.prepare('INSERT INTO users (id, email, password_hash, nickname, created_at, updated_at) VALUES (?,?,?,?,?,?)').run(id, email, hash, nickname, now, now);
-  const user = db.prepare('SELECT id, nickname, avatar_url as avatarUrl, signature FROM users WHERE id = ?').get(id);
+  const user = db.prepare('SELECT id, email, nickname, avatar_url as avatarUrl, signature FROM users WHERE id = ?').get(id);
   const accessToken = signAccessToken(id);
   const refreshToken = signRefreshToken(id);
   res.json({ code: 0, message: 'success', data: { user, accessToken, refreshToken } });
@@ -32,11 +32,11 @@ router.post('/login', (req, res) => {
   if (!email || !password) {
     return res.status(400).json({ code: 1001, message: 'email and password are required', data: null });
   }
-  const row = db.prepare('SELECT id, nickname, avatar_url as avatarUrl, signature, password_hash FROM users WHERE email = ?').get(email);
+  const row = db.prepare('SELECT id, email, nickname, avatar_url as avatarUrl, signature, password_hash FROM users WHERE email = ?').get(email);
   if (!row || !bcrypt.compareSync(password, row.password_hash)) {
     return res.status(401).json({ code: 1002, message: 'Invalid email or password', data: null });
   }
-  const user = { id: row.id, nickname: row.nickname, avatarUrl: row.avatarUrl, signature: row.signature };
+  const user = { id: row.id, email: row.email, nickname: row.nickname, avatarUrl: row.avatarUrl, signature: row.signature };
   const accessToken = signAccessToken(row.id);
   const refreshToken = signRefreshToken(row.id);
   res.json({ code: 0, message: 'success', data: { user, accessToken, refreshToken } });
