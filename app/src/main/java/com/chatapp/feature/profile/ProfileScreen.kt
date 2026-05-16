@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,9 +28,16 @@ import com.chatapp.core.ui.components.LoadingView
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
+    onAuthError: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val authError by viewModel.authError.collectAsStateWithLifecycle()
+
+    LaunchedEffect(authError) {
+        if (authError) onAuthError()
+    }
+
     when (val state = uiState) {
         is UiState.Loading -> LoadingView()
         is UiState.Empty -> LoadingView()
@@ -58,7 +66,7 @@ private fun ProfileContent(data: ProfileUiData, onLogout: () -> Unit) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(text = data.user.nickname, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(4.dp))
-                        Text(text = "账号: ${data.user.id}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                        Text(text = "账号: ${data.user.email.ifBlank { data.user.id }}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                         if (data.user.signature.isNotBlank()) {
                             Spacer(Modifier.height(2.dp))
                             Text(text = data.user.signature, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))

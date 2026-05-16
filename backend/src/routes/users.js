@@ -6,7 +6,7 @@ const router = express.Router();
 
 // GET /api/v1/users/me
 router.get('/me', authMiddleware, (req, res) => {
-  const user = db.prepare('SELECT id, nickname, avatar_url as avatarUrl, signature FROM users WHERE id = ?').get(req.userId);
+  const user = db.prepare('SELECT id, email, nickname, avatar_url as avatarUrl, signature FROM users WHERE id = ?').get(req.userId);
   if (!user) return res.status(404).json({ code: 1004, message: 'User not found', data: null });
   res.json({ code: 0, message: 'success', data: user });
 });

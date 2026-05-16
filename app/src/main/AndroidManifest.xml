@@ -6,7 +6,7 @@
         android:name=".ChatLinkApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="郑丰奇和穆楠的私密空间"
+        android:label="假微信"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.ChatLink"

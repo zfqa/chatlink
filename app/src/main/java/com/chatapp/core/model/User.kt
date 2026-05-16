@@ -5,4 +5,5 @@ data class User(
     val nickname: String,
     val avatarUrl: String,
     val signature: String = "",
+    val email: String = "",
 )

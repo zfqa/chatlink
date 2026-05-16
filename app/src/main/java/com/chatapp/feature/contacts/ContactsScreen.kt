@@ -1,4 +1,4 @@
-﻿package com.chatapp.feature.contacts
+package com.chatapp.feature.contacts
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,12 +20,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chatapp.core.common.UiState
 import com.chatapp.core.model.Contact
+import com.chatapp.data.remote.TokenStore
 import com.chatapp.core.ui.components.Avatar
 import com.chatapp.core.ui.components.EmptyState
 import com.chatapp.core.ui.components.ErrorView
 import com.chatapp.core.ui.components.LoadingView
-@Composable
 
+@Composable
 fun ContactsScreen(
     onContactClick: (String) -> Unit,
     onAddFriend: () -> Unit,
@@ -44,6 +45,7 @@ fun ContactsScreen(
         is UiState.Loading -> {
             ContactsContent(
                 data = ContactsUiData(emptyList()),
+                currentUserId = "",
                 onContactClick = onContactClick,
                 onAddFriend = onAddFriend,
                 onFriendRequests = onFriendRequests,
@@ -53,6 +55,7 @@ fun ContactsScreen(
         is UiState.Error -> ErrorView(message = state.message)
         else -> ContactsContent(
             data = if (state is UiState.Content) state.data else ContactsUiData(emptyList()),
+            currentUserId = viewModel.currentUserId,
             onContactClick = onContactClick,
             onAddFriend = onAddFriend,
             onFriendRequests = onFriendRequests,
@@ -61,11 +64,10 @@ fun ContactsScreen(
     }
 }
 
-
 @Composable
-
 private fun ContactsContent(
     data: ContactsUiData,
+    currentUserId: String,
     onContactClick: (String) -> Unit,
     onAddFriend: () -> Unit,
     onFriendRequests: () -> Unit,
@@ -92,61 +94,43 @@ private fun ContactsContent(
         }
         grouped.forEach { (initial, group) ->
             item(key = "header_" + initial) {
-
                 Text(text = initial, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
-
             }
-
             items(group, key = { it.user.id }) { contact ->
-                ContactItem(contact, onClick = { onContactClick(contact.user.id) })
+                val isSelf = contact.user.id == currentUserId
+                ContactItem(
+                    contact = contact,
+                    isSelf = isSelf,
+                    onClick = { if (!isSelf) onContactClick(contact.user.id) },
+                )
                 HorizontalDivider(modifier = Modifier.padding(start = 72.dp))
             }
-
         }
-
     }
-
 }
 
-
-
 @Composable
-
-private fun ContactItem(contact: Contact, onClick: () -> Unit) {
+private fun ContactItem(contact: Contact, isSelf: Boolean, onClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
-
     ) {
-
         Avatar(name = contact.user.nickname)
-
         Spacer(Modifier.width(12.dp))
-
         Column(modifier = Modifier.weight(1f)) {
-
             Text(text = contact.user.nickname, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-
-            if (contact.user.signature.isNotBlank()) {
-
+            if (isSelf) {
+                Text(text = "这是你自己的账号", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+            } else if (contact.user.signature.isNotBlank()) {
                 Text(text = contact.user.signature, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
-
             }
-
         }
-
-        if (contact.isOnline) {
-
+        if (!isSelf && contact.isOnline) {
             Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)) {
-
                 Text(text = "在线", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-
             }
-
         }
-
     }
-
 }
 
 @Composable

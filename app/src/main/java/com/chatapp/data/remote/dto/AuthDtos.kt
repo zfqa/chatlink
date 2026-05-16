@@ -31,11 +31,12 @@ data class AuthData(
 
 data class UserDto(
     val id: String,
+    val email: String = "",
     val nickname: String,
     val avatarUrl: String,
     val signature: String,
 ) {
-    fun toModel(): User = User(id, nickname, avatarUrl, signature)
+    fun toModel(): User = User(id, nickname, avatarUrl, signature, email)
 }
 
 data class UsersSearchResponse(

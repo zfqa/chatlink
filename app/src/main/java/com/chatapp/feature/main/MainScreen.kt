@@ -28,7 +28,7 @@ fun MainScreen(
     val currentRoute = navBackStack?.destination?.route
 
     // Determine current tab title
-    val currentTitle = items.find { it.route == currentRoute }?.label ?: "私密空间"
+    val currentTitle = items.find { it.route == currentRoute }?.label ?: "假微信"
 
     Scaffold(
         topBar = {
@@ -84,7 +84,7 @@ fun MainScreen(
                 DiscoverScreen()
             }
             composable(BottomNavItem.PROFILE.route) {
-            ProfileScreen(onLogout = onLogout)
+                ProfileScreen(onLogout = onLogout, onAuthError = onLogout)
             }
         }
     }

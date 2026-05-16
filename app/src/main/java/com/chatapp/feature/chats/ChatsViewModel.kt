@@ -28,11 +28,9 @@ class ChatsViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             flow {
-                // Fetch from backend first
                 if (conversationRepo is RealConversationRepository) {
                     conversationRepo.fetchConversations()
                 }
-                // Then observe the flow
                 emitAll(combine(
                     conversationRepo.getConversations(),
                     _query,
