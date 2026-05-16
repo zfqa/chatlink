@@ -6,8 +6,8 @@ const { authMiddleware } = require('../middleware/auth');
 const router = express.Router();
 
 function getPeer(convId, userId) {
-  const peer = db.prepare('SELECT u.id, u.nickname, u.avatar_url as avatarUrl, u.signature FROM conversation_participants cp JOIN users u ON u.id = cp.user_id WHERE cp.conversation_id = ? AND cp.user_id != ?').get(convId, userId);
-  return peer || { id: '', nickname: '', avatarUrl: '', signature: '' };
+  const peer = db.prepare('SELECT u.id, u.email, u.nickname, u.avatar_url as avatarUrl, u.signature FROM conversation_participants cp JOIN users u ON u.id = cp.user_id WHERE cp.conversation_id = ? AND cp.user_id != ?').get(convId, userId);
+  return peer || { id: '', email: '', nickname: '', avatarUrl: '', signature: '' };
 }
 
 function getLastMessage(convId) {
@@ -39,7 +39,7 @@ router.post('/direct', authMiddleware, (req, res) => {
   const { peerId } = req.body;
   if (!peerId) return res.status(400).json({ code: 1001, message: 'peerId is required', data: null });
   if (peerId === req.userId) return res.status(400).json({ code: 1001, message: 'Cannot chat with yourself', data: null });
-  const peer = db.prepare('SELECT id, nickname, avatar_url as avatarUrl, signature FROM users WHERE id = ?').get(peerId);
+  const peer = db.prepare('SELECT id, email, nickname, avatar_url as avatarUrl, signature FROM users WHERE id = ?').get(peerId);
   if (!peer) return res.status(404).json({ code: 1004, message: 'User not found', data: null });
   // Find existing direct conversation between two users
   const existing = db.prepare('SELECT cp1.conversation_id FROM conversation_participants cp1 JOIN conversation_participants cp2 ON cp1.conversation_id = cp2.conversation_id JOIN conversations c ON c.id = cp1.conversation_id WHERE cp1.user_id = ? AND cp2.user_id = ? AND c.type = ?').get(req.userId, peerId, 'DIRECT');

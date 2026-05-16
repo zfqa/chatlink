@@ -10,7 +10,7 @@ router.post('/requests', authMiddleware, (req, res) => {
   const { toUserId } = req.body;
   if (!toUserId) return res.status(400).json({ code: 1001, message: 'toUserId is required', data: null });
   if (toUserId === req.userId) return res.status(400).json({ code: 1001, message: 'Cannot add yourself', data: null });
-  const target = db.prepare('SELECT id, nickname, avatar_url as avatarUrl, signature FROM users WHERE id = ?').get(toUserId);
+  const target = db.prepare('SELECT id, email, nickname, avatar_url as avatarUrl, signature FROM users WHERE id = ?').get(toUserId);
   if (!target) return res.status(404).json({ code: 1004, message: 'User not found', data: null });
   const existing = db.prepare('SELECT id FROM friend_requests WHERE from_user_id = ? AND to_user_id = ? AND status = ?').get(req.userId, toUserId, 'PENDING');
   if (existing) return res.status(409).json({ code: 1005, message: 'Request already sent', data: null });
@@ -18,7 +18,7 @@ router.post('/requests', authMiddleware, (req, res) => {
   if (already) return res.status(409).json({ code: 1005, message: 'Already friends', data: null });
   const id = 'fr_' + uuidv4().slice(0, 8);
   db.prepare('INSERT INTO friend_requests (id, from_user_id, to_user_id) VALUES (?,?,?)').run(id, req.userId, toUserId);
-  const me = db.prepare('SELECT id, nickname, avatar_url as avatarUrl, signature FROM users WHERE id = ?').get(req.userId);
+  const me = db.prepare('SELECT id, email, nickname, avatar_url as avatarUrl, signature FROM users WHERE id = ?').get(req.userId);
   const request = { id, fromUser: me, toUserId, timestamp: Date.now(), status: 'PENDING' };
   res.json({ code: 0, message: 'success', data: { request } });
 });
@@ -26,8 +26,8 @@ router.post('/requests', authMiddleware, (req, res) => {
 // GET /api/v1/friends/requests?status=PENDING
 router.get('/requests', authMiddleware, (req, res) => {
   const status = req.query.status || 'PENDING';
-  const rows = db.prepare('SELECT fr.id, fr.from_user_id, fr.to_user_id, fr.status, fr.created_at, u.id as f_id, u.nickname as f_nickname, u.avatar_url as f_avatar, u.signature as f_sig FROM friend_requests fr JOIN users u ON u.id = fr.from_user_id WHERE fr.to_user_id = ? AND fr.status = ? ORDER BY fr.created_at DESC').all(req.userId, status);
-  const requests = rows.map(r => ({ id: r.id, fromUser: { id: r.f_id, nickname: r.f_nickname, avatarUrl: r.f_avatar, signature: r.f_sig }, toUserId: r.to_user_id, timestamp: r.created_at, status: r.status }));
+  const rows = db.prepare('SELECT fr.id, fr.from_user_id, fr.to_user_id, fr.status, fr.created_at, u.id as f_id, u.email as f_email, u.nickname as f_nickname, u.avatar_url as f_avatar, u.signature as f_sig FROM friend_requests fr JOIN users u ON u.id = fr.from_user_id WHERE fr.to_user_id = ? AND fr.status = ? ORDER BY fr.created_at DESC').all(req.userId, status);
+  const requests = rows.map(r => ({ id: r.id, fromUser: { id: r.f_id, email: r.f_email || '', nickname: r.f_nickname, avatarUrl: r.f_avatar, signature: r.f_sig }, toUserId: r.to_user_id, timestamp: r.created_at, status: r.status }));
   res.json({ code: 0, message: 'success', data: { requests } });
 });
 
