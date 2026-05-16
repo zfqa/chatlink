@@ -25,6 +25,15 @@ router.get('/', authMiddleware, (req, res) => {
   res.json({ code: 0, message: 'success', data: { conversations } });
 });
 
+// POST /api/v1/conversations/:conversationId/read
+router.post('/:conversationId/read', authMiddleware, (req, res) => {
+  const { conversationId } = req.params;
+  const participant = db.prepare('SELECT user_id FROM conversation_participants WHERE conversation_id = ? AND user_id = ?').get(conversationId, req.userId);
+  if (!participant) return res.status(403).json({ code: 1003, message: 'Not a participant', data: null });
+  db.prepare('UPDATE conversation_participants SET unread_count = 0 WHERE conversation_id = ? AND user_id = ?').run(conversationId, req.userId);
+  res.json({ code: 0, message: 'success', data: null });
+});
+
 // POST /api/v1/conversations/direct
 router.post('/direct', authMiddleware, (req, res) => {
   const { peerId } = req.body;

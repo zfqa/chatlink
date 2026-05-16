@@ -46,12 +46,12 @@ class ChatDetailViewModel @Inject constructor(
         )
 
     init {
-        // Fetch messages from backend
+        // Fetch messages and mark as read
         viewModelScope.launch {
             try {
                 if (conversationRepo is RealConversationRepository) {
                     conversationRepo.fetchMessages(conversationId)
-                    // Try to get peer name from conversations list
+                    conversationRepo.markAsRead(conversationId)
                     val conv = conversationRepo.getConversations().first().find { it.id == conversationId }
                     if (conv != null) peerName.value = conv.peer.nickname
                 }

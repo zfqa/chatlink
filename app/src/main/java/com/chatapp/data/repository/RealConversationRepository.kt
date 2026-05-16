@@ -63,6 +63,20 @@ class RealConversationRepository @Inject constructor(
         list
     }
 
+    suspend fun markAsRead(conversationId: String) = withContext(Dispatchers.IO) {
+        val token = requireToken()
+        try {
+            NetworkConfig.postJson("/conversations/$conversationId/read", emptyMap<String, String>(), token)
+            // Update local unread count to 0
+            conversationsFlow.value = conversationsFlow.value.map { conv ->
+                if (conv.id == conversationId) conv.copy(unreadCount = 0) else conv
+            }
+            Log.d(TAG, "markAsRead conv=$conversationId")
+        } catch (e: Exception) {
+            Log.e(TAG, "markAsRead failed: ${e.message}")
+        }
+    }
+
     override suspend fun sendMessage(conversationId: String, content: String): Message = withContext(Dispatchers.IO) {
         val token = requireToken()
         val body = mapOf("content" to content, "type" to "TEXT")
