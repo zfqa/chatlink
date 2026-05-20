@@ -31,6 +31,7 @@ fun ContactsScreen(
     onContactClick: (String) -> Unit,
     onAddFriend: () -> Unit,
     onFriendRequests: () -> Unit,
+    onCreateGroup: () -> Unit = {},
     onAuthError: () -> Unit = {},
     viewModel: ContactsViewModel = hiltViewModel(),
 ) {
@@ -49,6 +50,7 @@ fun ContactsScreen(
                 onContactClick = onContactClick,
                 onAddFriend = onAddFriend,
                 onFriendRequests = onFriendRequests,
+                onCreateGroup = onCreateGroup,
                 pendingCount = pendingCount,
             )
         }
@@ -59,6 +61,7 @@ fun ContactsScreen(
             onContactClick = onContactClick,
             onAddFriend = onAddFriend,
             onFriendRequests = onFriendRequests,
+            onCreateGroup = onCreateGroup,
             pendingCount = pendingCount,
         )
     }
@@ -71,6 +74,7 @@ private fun ContactsContent(
     onContactClick: (String) -> Unit,
     onAddFriend: () -> Unit,
     onFriendRequests: () -> Unit,
+    onCreateGroup: () -> Unit,
     pendingCount: Int,
 ) {
     val contacts = data.filtered
@@ -87,6 +91,10 @@ private fun ContactsContent(
                 subtitle = if (pendingCount > 0) "${pendingCount} 条待处理" else "",
                 onClick = onFriendRequests,
             )
+        }
+        // Create Group entry
+        item(key = "create_group") {
+            ActionItem(title = "创建群聊", subtitle = "选择联系人创建群组", onClick = onCreateGroup)
         }
         item(key = "divider") { HorizontalDivider(modifier = Modifier.padding(start = 16.dp)) }
         if (contacts.isEmpty()) {

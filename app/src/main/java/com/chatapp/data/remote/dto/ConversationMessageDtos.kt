@@ -1,6 +1,7 @@
 package com.chatapp.data.remote.dto
 
 import com.chatapp.core.model.Conversation
+import com.chatapp.core.model.ConversationType
 import com.chatapp.core.model.Message
 import com.chatapp.core.model.MessageStatus
 import com.chatapp.core.model.MessageType
@@ -19,22 +20,36 @@ data class ConversationsData(
 
 data class ConversationDto(
     val id: String,
-    val peer: UserDto,
+    val type: String? = null,
+    val peer: UserDto? = null,
+    val groupName: String? = null,
+    val groupAvatarUrl: String? = null,
+    val ownerId: String? = null,
     val lastMessage: String = "",
     val lastMessageTime: Long = 0,
     val unreadCount: Int = 0,
     val isPinned: Boolean = false,
     val isMuted: Boolean = false,
 ) {
-    fun toModel(): Conversation = Conversation(
-        id = id,
-        peer = peer.toModel(),
-        lastMessage = lastMessage,
-        lastMessageTime = lastMessageTime,
-        unreadCount = unreadCount,
-        isPinned = isPinned,
-        isMuted = isMuted,
-    )
+    fun toModel(): Conversation {
+        val convType = when (type) {
+            "GROUP" -> ConversationType.GROUP
+            else -> ConversationType.DIRECT
+        }
+        return Conversation(
+            id = id,
+            type = convType,
+            peer = peer?.toModel() ?: User("", "", "", ""),
+            groupName = groupName ?: "",
+            groupAvatarUrl = groupAvatarUrl ?: "",
+            ownerId = ownerId ?: "",
+            lastMessage = lastMessage,
+            lastMessageTime = lastMessageTime,
+            unreadCount = unreadCount,
+            isPinned = isPinned,
+            isMuted = isMuted,
+        )
+    }
 }
 
 data class DirectConversationResponse(
@@ -46,6 +61,45 @@ data class DirectConversationResponse(
 data class DirectConversationData(
     val conversation: ConversationDto,
 )
+
+// --- Group ---
+
+data class GroupConversationResponse(
+    val code: Int,
+    val message: String,
+    val data: GroupConversationData?,
+)
+
+data class GroupConversationData(
+    val conversation: ConversationDto,
+)
+
+data class GroupMembersResponse(
+    val code: Int,
+    val message: String,
+    val data: GroupMembersData?,
+)
+
+data class GroupMembersData(
+    val members: List<GroupMemberDto>,
+)
+
+data class GroupMemberDto(
+    val id: String,
+    val email: String? = null,
+    val nickname: String? = null,
+    val avatarUrl: String? = null,
+    val signature: String? = null,
+    val role: String? = null,
+) {
+    fun toUser() = com.chatapp.core.model.User(
+        id = id,
+        nickname = nickname ?: "",
+        avatarUrl = avatarUrl ?: "",
+        signature = signature ?: "",
+        email = email ?: "",
+    )
+}
 
 // --- Messages ---
 

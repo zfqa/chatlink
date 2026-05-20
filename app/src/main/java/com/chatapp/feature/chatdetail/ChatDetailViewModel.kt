@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatapp.core.common.UiState
+import com.chatapp.core.model.ConversationType
 import com.chatapp.core.model.Message
 import com.chatapp.data.remote.ApiException
 import com.chatapp.data.remote.TokenStore
@@ -32,11 +33,13 @@ class ChatDetailViewModel @Inject constructor(
     val currentUserId: String = tokenStore.getUserId() ?: ""
 
     private val peerName = MutableStateFlow("")
+    private val isGroup = MutableStateFlow(false)
+    private val senderNames = MutableStateFlow<Map<String, String>>(emptyMap())
 
     val uiState: StateFlow<UiState<ChatDetailUiData>> =
-        combine(conversationRepo.getMessages(conversationId), peerName) { messages, name ->
+        combine(conversationRepo.getMessages(conversationId), peerName, isGroup, senderNames) { messages, name, group, names ->
             if (messages.isEmpty()) UiState.Empty
-            else UiState.Content(ChatDetailUiData(messages, name))
+            else UiState.Content(ChatDetailUiData(messages, name, group, names))
         }.catch { e ->
             emit(UiState.Error(e.message ?: "Load failed"))
         }.stateIn(
@@ -53,7 +56,15 @@ class ChatDetailViewModel @Inject constructor(
                     conversationRepo.fetchMessages(conversationId)
                     conversationRepo.markAsRead(conversationId)
                     val conv = conversationRepo.getConversations().first().find { it.id == conversationId }
-                    if (conv != null) peerName.value = conv.peer.nickname
+                    if (conv != null) {
+                        peerName.value = conv.displayName
+                        if (conv.type == ConversationType.GROUP) {
+                            isGroup.value = true
+                            // Fetch group members for sender names
+                            val members = conversationRepo.getGroupMembers(conversationId)
+                            senderNames.value = members.associate { it.id to it.nickname }
+                        }
+                    }
                 }
             } catch (e: ApiException) {
                 if (e.httpCode == 401) {

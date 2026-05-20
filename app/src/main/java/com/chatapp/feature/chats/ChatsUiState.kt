@@ -10,7 +10,7 @@ data class ChatsUiData(
     val filtered: List<Conversation>
         get() = if (filterQuery.isBlank()) conversations
                 else conversations.filter {
-                    it.peer.nickname.contains(filterQuery, ignoreCase = true) ||
+                    it.displayName.contains(filterQuery, ignoreCase = true) ||
                     it.lastMessage.contains(filterQuery, ignoreCase = true)
                 }
 }

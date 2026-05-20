@@ -8,6 +8,8 @@ import com.chatapp.data.remote.NetworkConfig
 import com.chatapp.data.remote.TokenStore
 import com.chatapp.data.remote.dto.ConversationsResponse
 import com.chatapp.data.remote.dto.DirectConversationResponse
+import com.chatapp.data.remote.dto.GroupConversationResponse
+import com.chatapp.data.remote.dto.GroupMembersResponse
 import com.chatapp.data.remote.dto.MessagesResponse
 import com.chatapp.data.remote.dto.SendMessageResponse
 import com.chatapp.domain.repository.ConversationRepository
@@ -133,6 +135,29 @@ class RealConversationRepository @Inject constructor(
         if (existing >= 0) current[existing] = conv else current.add(0, conv)
         conversationsFlow.value = current
         conv
+    }
+
+    suspend fun createGroup(name: String, memberIds: List<String>): Conversation = withContext(Dispatchers.IO) {
+        val token = requireToken()
+        val body = mapOf("name" to name, "memberIds" to memberIds)
+        Log.d(TAG, "POST /conversations/group name=$name members=${memberIds.size}")
+        val raw = NetworkConfig.postJson("/conversations/group", body, token)
+        val resp = NetworkConfig.parseResponse<GroupConversationResponse>(raw)
+        if (resp.code != 0 || resp.data == null) throw Exception(resp.message)
+        val conv = resp.data.conversation.toModel()
+        Log.d(TAG, "POST /conversations/group -> convId=${conv.id}")
+        val current = conversationsFlow.value.toMutableList()
+        current.add(0, conv)
+        conversationsFlow.value = current
+        conv
+    }
+
+    suspend fun getGroupMembers(conversationId: String): List<com.chatapp.core.model.User> = withContext(Dispatchers.IO) {
+        val token = requireToken()
+        val raw = NetworkConfig.getJson("/conversations/$conversationId/members", token)
+        val resp = NetworkConfig.parseResponse<GroupMembersResponse>(raw)
+        if (resp.code != 0) return@withContext emptyList()
+        resp.data?.members?.map { it.toUser() } ?: emptyList()
     }
 
     fun getCurrentUserId(): String? = tokenStore.getUserId()

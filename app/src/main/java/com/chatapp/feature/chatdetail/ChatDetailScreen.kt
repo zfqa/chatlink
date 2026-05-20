@@ -70,7 +70,12 @@ fun ChatDetailScreen(
                     is UiState.Loading -> LoadingView()
                     is UiState.Empty -> EmptyState(message = "发送一条消息开始聊天吧")
                     is UiState.Error -> ErrorView(message = state.message)
-                    is UiState.Content -> MessageList(state.data.messages, viewModel.currentUserId)
+                    is UiState.Content -> MessageList(
+                        messages = state.data.messages,
+                        currentUserId = viewModel.currentUserId,
+                        isGroup = state.data.isGroup,
+                        senderNames = state.data.senderNames,
+                    )
                 }
             }
             ChatInputBar(text = inputText, onTextChange = viewModel::onInputChange, onSend = viewModel::sendMessage)
@@ -79,7 +84,7 @@ fun ChatDetailScreen(
 }
 
 @Composable
-private fun MessageList(messages: List<Message>, currentUserId: String) {
+private fun MessageList(messages: List<Message>, currentUserId: String, isGroup: Boolean = false, senderNames: Map<String, String> = emptyMap()) {
     val listState = rememberLazyListState()
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) { listState.animateScrollToItem(messages.lastIndex) }
@@ -90,19 +95,30 @@ private fun MessageList(messages: List<Message>, currentUserId: String) {
         contentPadding = PaddingValues(vertical = 8.dp),
     ) {
         items(messages, key = { it.id }) { msg ->
-            MessageBubble(message = msg, currentUserId = currentUserId)
+            MessageBubble(message = msg, currentUserId = currentUserId, isGroup = isGroup, senderNames = senderNames)
             Spacer(Modifier.height(4.dp))
         }
     }
 }
 
 @Composable
-private fun MessageBubble(message: Message, currentUserId: String) {
+private fun MessageBubble(message: Message, currentUserId: String, isGroup: Boolean = false, senderNames: Map<String, String> = emptyMap()) {
     val isSelf = message.senderId == currentUserId
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = if (isSelf) Arrangement.End else Arrangement.Start) {
-        Box(
-            modifier = Modifier.widthIn(max = 280.dp).background(color = if (isSelf) ChatBubbleSelf else ChatBubbleOther, shape = RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 8.dp),
-        ) { Text(text = message.content, style = MaterialTheme.typography.bodyLarge, color = Color.Black) }
+        Column(horizontalAlignment = if (isSelf) Alignment.End else Alignment.Start) {
+            // Show sender name in group chat for non-self messages
+            if (isGroup && !isSelf) {
+                Text(
+                    text = senderNames[message.senderId] ?: message.senderId,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    modifier = Modifier.padding(start = 4.dp, bottom = 2.dp),
+                )
+            }
+            Box(
+                modifier = Modifier.widthIn(max = 280.dp).background(color = if (isSelf) ChatBubbleSelf else ChatBubbleOther, shape = RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 8.dp),
+            ) { Text(text = message.content, style = MaterialTheme.typography.bodyLarge, color = Color.Black) }
+        }
     }
 }
 

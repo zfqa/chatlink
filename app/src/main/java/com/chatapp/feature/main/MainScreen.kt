@@ -20,6 +20,7 @@ fun MainScreen(
     onContactClick: (String) -> Unit,
     onAddFriend: () -> Unit,
     onFriendRequests: () -> Unit,
+    onCreateGroup: () -> Unit = {},
     onLogout: () -> Unit,
 ) {
     val navController = rememberNavController()
@@ -77,6 +78,7 @@ fun MainScreen(
                     onContactClick = onContactClick,
                     onAddFriend = onAddFriend,
                     onFriendRequests = onFriendRequests,
+                    onCreateGroup = onCreateGroup,
                     onAuthError = onLogout,
                 )
             }

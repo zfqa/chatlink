@@ -7,6 +7,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.chatapp.feature.creategroup.CreateGroupScreen
 import com.chatapp.feature.friendrequest.FriendRequestsScreen
 import com.chatapp.feature.searchuser.SearchUserScreen
 import com.chatapp.feature.contactdetail.ContactDetailScreen
@@ -66,6 +67,9 @@ fun AppNavHost(
                 onFriendRequests = {
                     navController.navigate(Routes.FRIEND_REQUESTS)
                 },
+                onCreateGroup = {
+                    navController.navigate(Routes.CREATE_GROUP)
+                },
                 onLogout = {
                     onLogout()
                     navController.navigate(Routes.LOGIN) {
@@ -95,6 +99,16 @@ fun AppNavHost(
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
+                },
+            )
+        }
+
+        composable(Routes.CREATE_GROUP) {
+            CreateGroupScreen(
+                onBack = { navController.popBackStack() },
+                onGroupCreated = { conversationId ->
+                    navController.popBackStack()
+                    navController.navigate(Routes.chatDetail(conversationId))
                 },
             )
         }
