@@ -64,6 +64,13 @@ class ChatDetailViewModel @Inject constructor(
         }
     }
 
+    override fun onCleared() {
+        super.onCleared()
+        if (conversationRepo is RealConversationRepository) {
+            conversationRepo.clearActiveConversation()
+        }
+    }
+
     fun onInputChange(text: String) { _inputText.value = text }
 
     fun sendMessage() {

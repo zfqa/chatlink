@@ -27,6 +27,7 @@ class RealConversationRepository @Inject constructor(
     private val conversationsFlow = MutableStateFlow<List<Conversation>>(emptyList())
     private val messagesFlows = mutableMapOf<String, MutableStateFlow<List<Message>>>()
     private val recentSentIds = LinkedHashSet<String>() // track recently sent message IDs for dedup
+    @Volatile var activeConversationId: String? = null // currently viewed conversation
     private companion object {
         const val TAG = "ConvRepo"
         const val MAX_SENT_IDS = 100
@@ -64,6 +65,7 @@ class RealConversationRepository @Inject constructor(
     }
 
     suspend fun markAsRead(conversationId: String) = withContext(Dispatchers.IO) {
+        activeConversationId = conversationId
         val token = requireToken()
         try {
             NetworkConfig.postJson("/conversations/$conversationId/read", emptyMap<String, String>(), token)
@@ -75,6 +77,17 @@ class RealConversationRepository @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "markAsRead failed: ${e.message}")
         }
+    }
+
+    fun clearActiveConversation() {
+        activeConversationId = null
+    }
+
+    fun clearAllState() {
+        conversationsFlow.value = emptyList()
+        messagesFlows.clear()
+        recentSentIds.clear()
+        activeConversationId = null
     }
 
     override suspend fun sendMessage(conversationId: String, content: String): Message = withContext(Dispatchers.IO) {
@@ -126,14 +139,14 @@ class RealConversationRepository @Inject constructor(
 
     /**
      * Called by WebSocketManager when a new message arrives.
-     * Deduplicates against both existing messages and recently sent messages.
+     * Returns true if the message is for a non-active conversation (caller should notify).
      */
-    fun onIncomingMessage(message: Message) {
+    fun onIncomingMessage(message: Message): Boolean {
         // Skip if this message was sent by us via HTTP (already in the list)
         synchronized(recentSentIds) {
             if (recentSentIds.contains(message.id)) {
                 Log.d(TAG, "WS skip: msgId=${message.id} (recently sent via HTTP)")
-                return
+                return false
             }
         }
 
@@ -141,12 +154,24 @@ class RealConversationRepository @Inject constructor(
         // Deduplicate against existing messages
         if (flow.value.any { it.id == message.id }) {
             Log.d(TAG, "WS skip: msgId=${message.id} (already in list)")
-            return
+            return false
         }
 
         flow.value = flow.value + message
         updateConversationLastMessage(message.conversationId, message.content, message.timestamp)
-        Log.d(TAG, "WS appended: conv=${message.conversationId} msgId=${message.id}")
+
+        // Check if user is currently viewing this conversation
+        val isActive = message.conversationId == activeConversationId
+        if (!isActive) {
+            // Increment unread count
+            conversationsFlow.value = conversationsFlow.value.map { conv ->
+                if (conv.id == message.conversationId) conv.copy(unreadCount = conv.unreadCount + 1) else conv
+            }
+            Log.d(TAG, "WS unread++: conv=${message.conversationId}")
+        } else {
+            Log.d(TAG, "WS active chat: conv=${message.conversationId}")
+        }
+        return !isActive
     }
 
     private fun updateConversationLastMessage(conversationId: String, content: String, timestamp: Long) {

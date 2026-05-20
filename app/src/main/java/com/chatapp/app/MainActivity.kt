@@ -2,6 +2,7 @@ package com.chatapp.app
 
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -42,7 +43,16 @@ class MainActivity : ComponentActivity() {
                 val repo = conversationRepo as RealConversationRepository
                 wsManager.onMessageReceived = { message ->
                     try {
-                        repo.onIncomingMessage(message)
+                        val shouldNotify = repo.onIncomingMessage(message)
+                        if (shouldNotify) {
+                            runOnUiThread {
+                                Toast.makeText(
+                                    this,
+                                    "${message.senderId}: ${message.content}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
                     } catch (e: Exception) {
                         Log.e(TAG, "onIncomingMessage error", e)
                     }
@@ -53,7 +63,6 @@ class MainActivity : ComponentActivity() {
             }
         } catch (e: Exception) {
             Log.e(TAG, "WebSocket setup failed", e)
-            // Not fatal — user can still use the app without real-time
         }
 
         setContent {
@@ -70,6 +79,9 @@ class MainActivity : ComponentActivity() {
                     onLogout = {
                         try { wsManager.disconnect() } catch (_: Exception) {}
                         try { tokenStore.clearTokens() } catch (_: Exception) {}
+                        if (conversationRepo is RealConversationRepository) {
+                            (conversationRepo as RealConversationRepository).clearAllState()
+                        }
                     },
                 )
             }
